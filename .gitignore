@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Django
+db.sqlite3
+*.log
+.env
+
+# Build-time download cache for the Census gazetteer archives.
+# The derived data (data/us_places.csv) is committed instead.
+.gazetteer_cache/
+
+# Tooling
+.pytest_cache/
+.coverage
+htmlcov/
+.idea/
+.vscode/
+.DS_Store

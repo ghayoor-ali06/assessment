@@ -1,0 +1,14 @@
+# Runtime
+Django==6.1.1
+djangorestframework==3.18.1
+numpy==2.5.3
+requests==2.34.2
+python-dotenv==1.2.3
+
+# Tests
+pytest==9.1.1
+pytest-django==4.14.0
+
+# Optional: only needed if you set REDIS_URL to share the route cache
+# between worker processes. The app uses an in-process cache by default.
+# redis==7.1.0
