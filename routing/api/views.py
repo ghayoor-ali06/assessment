@@ -62,7 +62,7 @@ def route_view(request):
             status=status.HTTP_503_SERVICE_UNAVAILABLE,
         )
 
-    return Response(_serialize(result))
+    return Response(_serialize(result, geometry=params["geometry"]))
 
 
 @api_view(["GET"])
@@ -77,14 +77,14 @@ def health_view(request):
     )
 
 
-def _serialize(result: PlanResult) -> dict[str, Any]:
+def _serialize(result: PlanResult, *, geometry: str = "full") -> dict[str, Any]:
     payload: dict[str, Any] = {
         "start": _location(result.start),
         "finish": _location(result.finish),
         "route": {
             "total_distance_miles": round(result.route.distance_miles, 1),
             "total_duration_minutes": round(result.route.duration_minutes, 1),
-            "geojson": _geojson(result),
+            "geojson": _geojson(result, geometry=geometry),
         },
         "fuel_plan": _fuel_plan(result),
         "meta": {
@@ -93,6 +93,7 @@ def _serialize(result: PlanResult) -> dict[str, Any]:
             "cached": result.cached,
             "elapsed_ms": round(result.elapsed_ms, 1),
             "candidate_stations": result.candidates_considered,
+            "geometry": geometry,
             "warnings": result.warnings,
         },
     }
@@ -133,22 +134,33 @@ def _fuel_plan(result: PlanResult) -> dict[str, Any]:
     }
 
 
-def _geojson(result: PlanResult) -> dict[str, Any]:
+# Points kept in the route LineString for each geometry mode. The full road
+# shape is thousands of coordinates and dominates the payload, so callers who
+# only want the fuel plan can ask for less.
+GEOMETRY_DETAIL = {"full": 1500, "simplified": 100}
+
+
+def _geojson(result: PlanResult, *, geometry: str = "full") -> dict[str, Any]:
     """Route line plus a marker per fuel stop, ready for geojson.io."""
-    features: list[dict[str, Any]] = [
-        {
-            "type": "Feature",
-            "properties": {
-                "kind": "route",
-                "distance_miles": round(result.route.distance_miles, 1),
-                "provider": result.route.provider,
-            },
-            "geometry": {
-                "type": "LineString",
-                "coordinates": result.route.to_line_coordinates(),
-            },
-        }
-    ]
+    features: list[dict[str, Any]] = []
+
+    if geometry != "none":
+        features.append(
+            {
+                "type": "Feature",
+                "properties": {
+                    "kind": "route",
+                    "distance_miles": round(result.route.distance_miles, 1),
+                    "provider": result.route.provider,
+                },
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": result.route.to_line_coordinates(
+                        max_points=GEOMETRY_DETAIL[geometry]
+                    ),
+                },
+            }
+        )
 
     for endpoint, location in (("start", result.start), ("finish", result.finish)):
         features.append(

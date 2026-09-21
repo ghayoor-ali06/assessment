@@ -37,7 +37,7 @@ already geocoded, so the import is a local CSV read.
 Run the tests (all offline, no network):
 
 ```bash
-pytest -q          # 323 tests, ~1 s
+pytest -q          # 328 tests, ~1 s
 pytest -q --live   # also hits the real routing service (5 extra tests)
 ```
 
@@ -213,6 +213,7 @@ cents. Set `cluster_bin_miles=0` to disable it and see the raw optimum.
 | `mpg` | `10` | fuel economy |
 | `corridor_miles` | `5` | how far off-route a station may sit |
 | `cluster_bin_miles` | `25` | keep cheapest station per N miles; `0` disables |
+| `geometry` | `full` | road detail in the response: `full`, `simplified` or `none` |
 | `refresh` | `false` | bypass the cache and re-fetch |
 
 Accepted location formats: `Denver, CO` · `Denver, Colorado` · `Denver CO` ·
@@ -257,6 +258,23 @@ Accepted location formats: `Denver, CO` · `Denver, Colorado` · `Denver CO` ·
 The `geojson` field is a ready-to-use `FeatureCollection` — the route `LineString`, the
 start and finish, and a `Point` per fuel stop. Paste it into
 [geojson.io](https://geojson.io) to see the map.
+
+#### Trimming the road geometry
+
+The full road shape is a few thousand coordinates and accounts for roughly 97% of the
+payload, which makes the response awkward to read in a client. `geometry` controls it;
+the plan and the totals are identical in every mode.
+
+| `geometry` | Coordinates | Response | Pretty-printed |
+|---|---|---|---|
+| `full` (default) | 1,500 | 36.3 KB | 6,196 lines |
+| `simplified` | 100 | 5.1 KB | 596 lines |
+| `none` | 0 — stops only | 2.8 KB | 183 lines |
+
+```bash
+# just the fuel plan, readable on screen
+curl "localhost:8000/api/v1/route/?start=New York, NY&finish=Chicago, IL&geometry=none"
+```
 
 ### `GET /api/v1/health/`
 
@@ -355,7 +373,7 @@ data/
   stations.geocoded.csv               6,854 stations with coordinates
   us_places.csv                       47,129 US places
   geocode_cache.json                  the 120 Nominatim answers
-tests/                           323 tests, fully offline
+tests/                           328 tests, fully offline
 ```
 
 ### Rebuilding the station data

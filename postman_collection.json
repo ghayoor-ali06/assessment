@@ -1,11 +1,15 @@
 {
   "info": {
     "name": "Fuel Route Optimizer",
-    "description": "Cost-optimal fuel stops along a US driving route.\n\nStart the server with `python manage.py runserver`, then run these in order. The `baseUrl` variable defaults to http://localhost:8000.\n\nEvery response carries `meta.external_api_calls` and `meta.cached`, so the one-call budget is visible on each request.",
+    "description": "Cost-optimal fuel stops along a US driving route.\n\nStart the server with `python manage.py runserver`, then run these in order. baseUrl defaults to http://localhost:8000.\n\nEvery response carries meta.external_api_calls and meta.cached, so the one-call budget is visible on each request.\n\nMost requests use geometry=none so the response is readable on screen. Request 4 shows the full geometry for mapping.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8000", "type": "string" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    }
   ],
   "item": [
     {
@@ -14,8 +18,15 @@
         "method": "GET",
         "url": {
           "raw": "{{baseUrl}}/api/v1/health/",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "health", ""]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "health",
+            ""
+          ]
         },
         "description": "Confirms the service is up and all 6,854 stations are loaded."
       }
@@ -25,15 +36,32 @@
       "request": {
         "method": "GET",
         "url": {
-          "raw": "{{baseUrl}}/api/v1/route/?start=New York, NY&finish=Chicago, IL",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "route", ""],
+          "raw": "{{baseUrl}}/api/v1/route/?start=New York, NY&finish=Chicago, IL&geometry=none",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "route",
+            ""
+          ],
           "query": [
-            { "key": "start", "value": "New York, NY" },
-            { "key": "finish", "value": "Chicago, IL" }
+            {
+              "key": "start",
+              "value": "New York, NY"
+            },
+            {
+              "key": "finish",
+              "value": "Chicago, IL"
+            },
+            {
+              "key": "geometry",
+              "value": "none"
+            }
           ]
         },
-        "description": "The headline case: ~795 miles, 3 stops, ~$245, one external API call."
+        "description": "The headline case: ~795 miles, 3 stops, $245.01, one external API call.\n\ngeometry=none leaves out the road shape, which is about 97% of the payload, so the response is short enough to read on screen. The plan and the totals are identical either way."
       }
     },
     {
@@ -41,127 +69,293 @@
       "request": {
         "method": "GET",
         "url": {
-          "raw": "{{baseUrl}}/api/v1/route/?start=New York, NY&finish=Chicago, IL",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "route", ""],
+          "raw": "{{baseUrl}}/api/v1/route/?start=New York, NY&finish=Chicago, IL&geometry=none",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "route",
+            ""
+          ],
           "query": [
-            { "key": "start", "value": "New York, NY" },
-            { "key": "finish", "value": "Chicago, IL" }
+            {
+              "key": "start",
+              "value": "New York, NY"
+            },
+            {
+              "key": "finish",
+              "value": "Chicago, IL"
+            },
+            {
+              "key": "geometry",
+              "value": "none"
+            }
           ]
         },
-        "description": "Identical request. Now `cached: true` and `external_api_calls: 0`, in roughly 30 ms instead of 1.3 s."
+        "description": "Identical request. Now cached: true and external_api_calls: 0, in roughly 40 ms instead of 2.5 s."
       }
     },
     {
-      "name": "4. Coast to coast (New York to Los Angeles)",
+      "name": "4. Full route geometry (for the map)",
       "request": {
         "method": "GET",
         "url": {
-          "raw": "{{baseUrl}}/api/v1/route/?start=New York, NY&finish=Los Angeles, CA",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "route", ""],
+          "raw": "{{baseUrl}}/api/v1/route/?start=New York, NY&finish=Chicago, IL&geometry=full",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "route",
+            ""
+          ],
           "query": [
-            { "key": "start", "value": "New York, NY" },
-            { "key": "finish", "value": "Los Angeles, CA" }
+            {
+              "key": "start",
+              "value": "New York, NY"
+            },
+            {
+              "key": "finish",
+              "value": "Chicago, IL"
+            },
+            {
+              "key": "geometry",
+              "value": "full"
+            }
+          ]
+        },
+        "description": "The same route with the complete road geometry, ~36 KB. Copy the geojson object into geojson.io to see the route drawn with the fuel stops marked.\n\nThe long coordinate list is the shape of the road, not an error."
+      }
+    },
+    {
+      "name": "5. Coast to coast (New York to Los Angeles)",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/route/?start=New York, NY&finish=Los Angeles, CA&geometry=none",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "route",
+            ""
+          ],
+          "query": [
+            {
+              "key": "start",
+              "value": "New York, NY"
+            },
+            {
+              "key": "finish",
+              "value": "Los Angeles, CA"
+            },
+            {
+              "key": "geometry",
+              "value": "none"
+            }
           ]
         },
         "description": "2,810 miles and 14 fuel stops, still on a single external call."
       }
     },
     {
-      "name": "5. Infeasible: Seattle to Los Angeles",
+      "name": "6. Infeasible: Seattle to Los Angeles",
       "request": {
         "method": "GET",
         "url": {
-          "raw": "{{baseUrl}}/api/v1/route/?start=Seattle, WA&finish=Los Angeles, CA",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "route", ""],
+          "raw": "{{baseUrl}}/api/v1/route/?start=Seattle, WA&finish=Los Angeles, CA&geometry=none",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "route",
+            ""
+          ],
           "query": [
-            { "key": "start", "value": "Seattle, WA" },
-            { "key": "finish", "value": "Los Angeles, CA" }
+            {
+              "key": "start",
+              "value": "Seattle, WA"
+            },
+            {
+              "key": "finish",
+              "value": "Los Angeles, CA"
+            },
+            {
+              "key": "geometry",
+              "value": "none"
+            }
           ]
         },
-        "description": "The price file has no stations along I-5 in California. Returns 200 with the route and GeoJSON, plus `feasible: false` and the exact 878-mile gap."
+        "description": "The price file has no stations along I-5 in California. Returns 200 with the route, plus feasible: false and the exact 878-mile gap."
       }
     },
     {
-      "name": "6. Coordinates instead of place names",
+      "name": "7. Coordinates instead of place names",
       "request": {
         "method": "GET",
         "url": {
-          "raw": "{{baseUrl}}/api/v1/route/?start=39.7392,-104.9903&finish=41.8781,-87.6298",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "route", ""],
+          "raw": "{{baseUrl}}/api/v1/route/?start=39.7392,-104.9903&finish=41.8781,-87.6298&geometry=none",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "route",
+            ""
+          ],
           "query": [
-            { "key": "start", "value": "39.7392,-104.9903" },
-            { "key": "finish", "value": "41.8781,-87.6298" }
+            {
+              "key": "start",
+              "value": "39.7392,-104.9903"
+            },
+            {
+              "key": "finish",
+              "value": "41.8781,-87.6298"
+            },
+            {
+              "key": "geometry",
+              "value": "none"
+            }
           ]
         },
         "description": "Denver to Chicago by raw latitude/longitude."
       }
     },
     {
-      "name": "7. Custom vehicle (20 mpg, 300 mi range)",
+      "name": "8. Custom vehicle (20 mpg, 300 mi range)",
       "request": {
         "method": "GET",
         "url": {
-          "raw": "{{baseUrl}}/api/v1/route/?start=Dallas, TX&finish=Atlanta, GA&mpg=20&range_miles=300",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "route", ""],
+          "raw": "{{baseUrl}}/api/v1/route/?start=Dallas, TX&finish=Atlanta, GA&mpg=20&range_miles=300&geometry=none",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "route",
+            ""
+          ],
           "query": [
-            { "key": "start", "value": "Dallas, TX" },
-            { "key": "finish", "value": "Atlanta, GA" },
-            { "key": "mpg", "value": "20" },
-            { "key": "range_miles", "value": "300" }
+            {
+              "key": "start",
+              "value": "Dallas, TX"
+            },
+            {
+              "key": "finish",
+              "value": "Atlanta, GA"
+            },
+            {
+              "key": "mpg",
+              "value": "20"
+            },
+            {
+              "key": "range_miles",
+              "value": "300"
+            },
+            {
+              "key": "geometry",
+              "value": "none"
+            }
           ]
         },
         "description": "The 500 mi / 10 mpg assumption is a default, not a hard-coded constant."
       }
     },
     {
-      "name": "8. Error: location outside the USA",
+      "name": "9. Error: location outside the USA",
       "request": {
         "method": "GET",
         "url": {
           "raw": "{{baseUrl}}/api/v1/route/?start=48.8566,2.3522&finish=Chicago, IL",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "route", ""],
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "route",
+            ""
+          ],
           "query": [
-            { "key": "start", "value": "48.8566,2.3522" },
-            { "key": "finish", "value": "Chicago, IL" }
+            {
+              "key": "start",
+              "value": "48.8566,2.3522"
+            },
+            {
+              "key": "finish",
+              "value": "Chicago, IL"
+            }
           ]
         },
         "description": "Paris. Rejected with 422 before any external call is made."
       }
     },
     {
-      "name": "9. Error: no road route (Honolulu to Hilo)",
+      "name": "10. Error: no road route (Honolulu to Hilo)",
       "request": {
         "method": "GET",
         "url": {
           "raw": "{{baseUrl}}/api/v1/route/?start=Honolulu, HI&finish=Hilo, HI",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "route", ""],
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "route",
+            ""
+          ],
           "query": [
-            { "key": "start", "value": "Honolulu, HI" },
-            { "key": "finish", "value": "Hilo, HI" }
+            {
+              "key": "start",
+              "value": "Honolulu, HI"
+            },
+            {
+              "key": "finish",
+              "value": "Hilo, HI"
+            }
           ]
         },
         "description": "Different islands, so no drivable route exists. Returns 422 rather than failing."
       }
     },
     {
-      "name": "10. Error: invalid parameter",
+      "name": "11. Error: invalid parameter",
       "request": {
         "method": "GET",
         "url": {
           "raw": "{{baseUrl}}/api/v1/route/?start=Denver, CO&finish=Chicago, IL&mpg=0",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "route", ""],
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "route",
+            ""
+          ],
           "query": [
-            { "key": "start", "value": "Denver, CO" },
-            { "key": "finish", "value": "Chicago, IL" },
-            { "key": "mpg", "value": "0" }
+            {
+              "key": "start",
+              "value": "Denver, CO"
+            },
+            {
+              "key": "finish",
+              "value": "Chicago, IL"
+            },
+            {
+              "key": "mpg",
+              "value": "0"
+            }
           ]
         },
         "description": "Zero miles per gallon. Returns 400 with a field-level message."

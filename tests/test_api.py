@@ -281,3 +281,58 @@ def test_health_endpoint(client):
     body = client.get(reverse("health")).json()
     assert body["status"] == "ok"
     assert body["stations_loaded"] == 4
+
+
+# --- geometry detail ---------------------------------------------------------
+#
+# The full road shape is ~97% of the payload. Callers that only want the fuel
+# plan can ask for less, which also makes the response readable in a client.
+
+
+def test_geometry_defaults_to_full(client, routing_calls):
+    body = get(client).json()
+    kinds = [f["properties"]["kind"] for f in body["route"]["geojson"]["features"]]
+    assert "route" in kinds
+    assert body["meta"]["geometry"] == "full"
+
+
+def test_geometry_none_omits_the_road_line_but_keeps_the_stops(client, routing_calls):
+    body = get(client, geometry="none").json()
+    features = body["route"]["geojson"]["features"]
+    kinds = [f["properties"]["kind"] for f in features]
+
+    assert "route" not in kinds
+    assert "start" in kinds and "finish" in kinds
+    assert kinds.count("fuel_stop") == body["fuel_plan"]["stop_count"]
+    # The plan itself is untouched.
+    assert body["fuel_plan"]["total_cost_usd"] > 0
+    assert body["route"]["total_distance_miles"] > 0
+
+
+def test_geometry_simplified_is_smaller_than_full(client, routing_calls):
+    def line_length(mode):
+        body = get(client, geometry=mode).json()
+        line = next(
+            f
+            for f in body["route"]["geojson"]["features"]
+            if f["properties"]["kind"] == "route"
+        )
+        return len(line["geometry"]["coordinates"])
+
+    full, simplified = line_length("full"), line_length("simplified")
+    assert simplified < full
+    assert simplified <= 100
+
+
+def test_geometry_none_shrinks_the_payload(client, routing_calls):
+    import json
+
+    full = len(json.dumps(get(client).json()))
+    without = len(json.dumps(get(client, geometry="none").json()))
+    assert without < full / 2
+
+
+def test_invalid_geometry_value_returns_400(client, routing_calls):
+    response = get(client, geometry="tiny")
+    assert response.status_code == 400
+    assert "geometry" in response.json()["detail"]

@@ -53,6 +53,16 @@ class RouteQuerySerializer(serializers.Serializer):
         default=False,
         help_text="Bypass the cache and re-fetch the route.",
     )
+    geometry = serializers.ChoiceField(
+        required=False,
+        choices=["full", "simplified", "none"],
+        default="full",
+        help_text=(
+            "How much road geometry to return. 'full' (default) is map-ready but "
+            "dominates the payload; 'simplified' is a lighter outline; 'none' "
+            "omits the road line and returns just the stops."
+        ),
+    )
 
     def validate_start(self, value: str) -> str:
         return self._require_text(value, "start")
